@@ -1,0 +1,758 @@
+<!doctype html>
+<html lang="bn">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Social Checker Tool</title>
+  <style>
+    body {
+      font-family: system-ui, -apple-system, "Segoe UI", Roboto, "Noto Sans", "Helvetica Neue", Arial;
+      margin: 20px;
+      background: #f7f8fa;
+      color: #111827;
+    }
+    h1 { font-size: 20px; margin-bottom: 8px; }
+    .container {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+      align-items: start;
+    }
+    .box {
+      background: #fff;
+      padding: 12px;
+      border-radius: 8px;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.06);
+      min-height: 320px;
+    }
+    textarea {
+      width: 100%;
+      height: 300px;
+      resize: vertical;
+      padding: 10px;
+      font-size: 14px;
+      border-radius: 6px;
+      border: 1px solid #e5e7eb;
+      box-sizing: border-box;
+      font-family: inherit;
+    }
+    .controls {
+      margin-top: 8px;
+      display:flex;
+      gap:8px;
+      align-items:center;
+    }
+    button {
+      padding: 8px 12px;
+      border-radius: 8px;
+      border: none;
+      cursor: pointer;
+      background: #111827;
+      color: white;
+      font-weight: 600;
+    }
+    button:active { transform: translateY(1px); }
+    .result {
+      white-space: pre-wrap;
+      font-size: 14px;
+      line-height: 1.4;
+    }
+    .small {
+      font-size: 13px;
+      color: #4b5563;
+    }
+    .warning { color: #b91c1c; font-weight: 600; }
+    @media (max-width: 800px) {
+      .container { grid-template-columns: 1fr; }
+      textarea { height: 220px; }
+    }
+    .matches-list { margin-top:8px; }
+    .match-item { padding:6px 8px; border-radius:6px; background:#eef2ff; display:inline-block; margin:4px 6px 4px 0; }
+  </style>
+</head>
+<body>
+  <h1>Community Guidelines Social Checker Tool</h1>
+  <p class="small">Paste your description on the left (max 5000 words).</p>
+
+  <div class="container">
+    <div class="box">
+      <label><strong>Left — Description</strong></label>
+      <textarea id="inputText" placeholder="Paste your text here..."></textarea>
+
+      <div class="controls">
+        <button id="submitBtn">Submit</button>
+        <div class="small" id="wordCount">Words: 0</div>
+        <div style="flex:1"></div>
+        <button id="clearBtn" style="background:#ef4444;">Clear</button>
+      </div>
+      <p class="small">Note: More than 5000 words will not be processed.</p>
+    </div>
+
+    <div class="box">
+      <label><strong>Matches</strong></label>
+      <div id="result" class="result" style="margin-top:8px;">(Result will appear here)</div>
+      <div id="matchesContainer" class="matches-list" aria-live="polite"></div>
+    </div>
+  </div>
+
+  <script>
+    /***************************************
+     * এখানে সব keyword যুক্ত করবে
+     ***************************************/
+    const KEYWORDS = [
+      "সেক্স","পর্ন","নগ্ন","ন্যুড","যৌন","মিলন","চোদা","চোদাচুদি","হস্তমৈথুন",
+      "FIRE","Fire","fire","ChodaChudi Video","Choda Chudi","Choda Chudi Video","CHODA","CHUDI","choda chudi video","choda","chudi",
+      "স্বত্ব",
+      "নকল",
+"সেক্স",
+"পর্ন",
+"নগ্ন",
+"ন্যুড",
+"যৌন",
+"মিলন",
+"চোদা",
+"চোদাচুদি",
+"হস্তমৈথুন",
+"কাম",
+"কামুক",
+"প্রেমের খেলা",
+"উত্তেজক",
+"হত্যা",
+"খুন",
+"রক্ত",
+"মারামারি",
+"গুলি",
+"বিস্ফোরণ",
+"আত্মহত্যা",
+"মৃতদেহ",
+"কাটা",
+"জবাই",
+"ঘৃণা",
+"বর্ণবাদ",
+"জঙ্গি",
+"সন্ত্রাস",
+"অপমান",
+"ধর্ম নিয়ে কটূ কথা",
+"জাতিবিদ্বেষ",
+"মাদক",
+"গাঁজা",
+"হেরোইন",
+"অ্যালকোহল",
+"মদ",
+"জুয়া",
+"বাজি",
+"সিগারেট",
+"নেশা",
+"ইনজেকশন",
+"শিশু নির্যাতন",
+"অপ্রাপ্তবয়স্ক",
+"বাচ্চার পর্ন",
+"নাবালিকা",
+"শিশুর শরীর",
+"ফ্রি টাকা",
+"হ্যাক",
+"এক ক্লিকে আয়",
+"এখনই আয়",
+"ক্লিক দাও",
+"ফ্রি সাবস্ক্রাইবার",
+"১৮+ ভিডিও",
+"চোদ",
+"হারামি",
+"কুত্তা",
+"মাগি",
+"বাল",
+"গাধা",
+"গালি জাতীয় শব্দ",
+"নগ্নতা",
+"রক্ত",
+"অস্ত্র",
+"সহিংসতা",
+"ভীতিকর মুখ",
+"১৮+ সাইন",
+"পর্ন সাইটের নাম",
+"১০০%",
+"গরম",
+"উত্তেজক",
+"ফ্লার্ট",
+"প্রেম খেলা",
+"প্রলোভন",
+"নগ্ন পোশাক",
+"যৌন নাচ",
+"কামনা",
+"উত্তেজনা",
+"নিজেকে মেরে ফেলা",
+"আত্মহত্যা করা",
+"গুলি",
+"বোমা বানানো",
+"অস্ত্র",
+"হামলা",
+"রক্তাক্ত দৃশ্য",
+"ধর্ম নিয়ে ঘৃণা",
+"অপমান",
+"ইসলাম বিরোধী",
+"হিন্দু বিরোধী",
+"জাতিবিদ্বেষ",
+"নারী বিদ্বেষ",
+"গাঁজা খাওয়া",
+"মাদক বানানো",
+"ইনজেকশন",
+"মদ খাওয়া চ্যালেঞ্জ",
+"অতিরিক্ত পান",
+"হ্যাকিং",
+"পাসওয়ার্ড ভাঙা",
+"পাইরেটেড",
+"টরেন্ট",
+"চিট কোড",
+"ডিডস আক্রমণ",
+"এক ক্লিকে টাকা আয়",
+"ফ্রি কয়েন",
+"ফ্রি গিফট",
+"ক্রিপ্টো প্রতারণা",
+"শিশুর পোশাক",
+"শিশুর দেহ",
+"অপ্রাপ্তবয়স্ক নাচ",
+"শিশুকে ছোঁয়া",
+"আত্মহত্যা চ্যালেঞ্জ",
+"নিজেকে কাটা",
+"মরে যাও",
+"কষ্টদায়ক মৃত্যু",
+"হারামজাদা",
+"বেশ্যা",
+"বদমাশ",
+"গাধা",
+"বিকৃতমনা",
+"আগুন চ্যালেঞ্জ",
+"ভয় দেখানো ভিডিও",
+"মৃত প্র্যাঙ্ক",
+"ডার্ক ওয়েব",
+"sex",
+"SEX",
+"sexual",
+"SEXUAL",
+"porn",
+"PORN",
+"pornography",
+"PORNOGRAPHY",
+"xxx",
+"XXX",
+"nude",
+"NUDE",
+"naked",
+"NAKED",
+"blowjob",
+"BLOWJOB",
+"masturbation",
+"MASTURBATION",
+"erotic",
+"EROTIC",
+"intercourse",
+"INTERCOURSE",
+"sexy",
+"SEXY",
+"orgasm",
+"ORGASM",
+"hentai",
+"HENTAI",
+"sex tape",
+"SEX TAPE",
+"kill",
+"KILL",
+"murder",
+"MURDER",
+"blood",
+"BLOOD",
+"gore",
+"GORE",
+"torture",
+"TORTURE",
+"execution",
+"EXECUTION",
+"beheading",
+"BEHEADING",
+"fight to death",
+"FIGHT TO DEATH",
+"shooting",
+"SHOOTING",
+"bombing",
+"BOMBING",
+"suicide",
+"SUICIDE",
+"dead body",
+"DEAD BODY",
+"stabbing",
+"STABBING",
+"hate",
+"HATE",
+"racist",
+"RACIST",
+"nazi",
+"NAZI",
+"terrorism",
+"TERRORISM",
+"terrorist",
+"TERRORIST",
+"jihad",
+"JIHAD",
+"discrimination",
+"DISCRIMINATION",
+"insult",
+"INSULT",
+"slur words",
+"SLUR WORDS",
+"e.g. n-word",
+"E.G. N-WORD",
+"f-word about gender or race",
+"F-WORD ABOUT GENDER OR RACE",
+"drugs",
+"DRUGS",
+"cocaine",
+"COCAINE",
+"heroin",
+"HEROIN",
+"weed",
+"WEED",
+"marijuana",
+"MARIJUANA",
+"alcohol",
+"ALCOHOL",
+"gambling",
+"GAMBLING",
+"casino",
+"CASINO",
+"bet",
+"BET",
+"drunk",
+"DRUNK",
+"pills",
+"PILLS",
+"Baby xxx",
+"BABY XXX",
+"injection",
+"INJECTION",
+"child abuse",
+"CHILD ABUSE",
+"underage",
+"UNDERAGE",
+"minor sex",
+"MINOR SEX",
+"kid nude",
+"KID NUDE",
+"pedophile",
+"PEDOPHILE",
+"child porn",
+"CHILD PORN",
+"free money",
+"FREE MONEY",
+"hack",
+"HACK",
+"earn instantly",
+"EARN INSTANTLY",
+"click here",
+"CLICK HERE",
+"giveaway scam",
+"GIVEAWAY SCAM",
+"free followers",
+"FREE FOLLOWERS",
+"18+ site",
+"18+ SITE",
+"download hack",
+"DOWNLOAD HACK",
+"f***",
+"F***",
+"s***",
+"S***",
+"b****",
+"B****",
+"a**",
+"A**",
+"d***",
+"D***",
+"motherf*****",
+"MOTHERF*****",
+"sex",
+"SEX",
+"kill",
+"KILL",
+"money hack",
+"MONEY HACK",
+"adult",
+"ADULT",
+"Hollywood",
+"hollywood",
+"HOLLYWOOD",
+"baby sex",
+"BABY SEX",
+"Baby",
+"Sex",
+"100 earning app",
+"100% earning app",
+"daily 5000 rupees earning app",
+"100%",
+"flirt",
+"FLIRT",
+"hot",
+"HOT",
+"naughty",
+"NAUGHTY",
+"bikini",
+"BIKINI",
+"lingerie",
+"LINGERIE",
+"cleavage",
+"CLEAVAGE",
+"seduce",
+"SEDUCE",
+"lust",
+"LUST",
+"fetish",
+"FETISH",
+"strip",
+"STRIP",
+"stripper",
+"STRIPPER",
+"erotic dance",
+"EROTIC DANCE",
+"lap dance",
+"LAP DANCE",
+"sex show",
+"SEX SHOW",
+"hookup",
+"HOOKUP",
+"dating 18+",
+"DATING 18+",
+"onlyfans",
+"ONLYFANS",
+"kill yourself",
+"KILL YOURSELF",
+"commit suicide",
+"COMMIT SUICIDE",
+"how to kill",
+"HOW TO KILL",
+"how to make bomb",
+"HOW TO MAKE BOMB",
+"explosive",
+"EXPLOSIVE",
+"gun",
+"GUN",
+"knife",
+"KNIFE",
+"weapon",
+"WEAPON",
+"murder weapon",
+"MURDER WEAPON",
+"attack",
+"ATTACK",
+"terror attack",
+"TERROR ATTACK",
+"mass shooting",
+"MASS SHOOTING",
+"blood scene",
+"BLOOD SCENE",
+"torture video",
+"TORTURE VIDEO",
+"kill muslims",
+"KILL MUSLIMS",
+"kill hindus",
+"KILL HINDUS",
+"kill jews",
+"KILL JEWS",
+"religion hate",
+"RELIGION HATE",
+"offend prophet",
+"OFFEND PROPHET",
+"insult religion",
+"INSULT RELIGION",
+"burn quran",
+"BURN QURAN",
+"burn temple",
+"BURN TEMPLE",
+"hate group",
+"HATE GROUP",
+"white power",
+"WHITE POWER",
+"black hate",
+"BLACK HATE",
+"gender hate",
+"GENDER HATE",
+"racism",
+"RACISM",
+"how to smoke weed",
+"HOW TO SMOKE WEED",
+"make drugs",
+"MAKE DRUGS",
+"drug recipe",
+"DRUG RECIPE",
+"inject drugs",
+"INJECT DRUGS",
+"get high",
+"GET HIGH",
+"take pills",
+"TAKE PILLS",
+"overdose",
+"OVERDOSE",
+"drug test",
+"DRUG TEST",
+"alcohol challenge",
+"ALCOHOL CHALLENGE",
+"drink till drunk",
+"DRINK TILL DRUNK",
+"hack facebook",
+"HACK FACEBOOK",
+"hack instagram",
+"HACK INSTAGRAM",
+"hack youtube",
+"HACK YOUTUBE",
+"how to hack",
+"HOW TO HACK",
+"password hack",
+"PASSWORD HACK",
+"crack software",
+"CRACK SOFTWARE",
+"pirated movie",
+"PIRATED MOVIE",
+"torrent download",
+"TORRENT DOWNLOAD",
+"mod apk",
+"MOD APK",
+"free crack",
+"FREE CRACK",
+"cheat code",
+"CHEAT CODE",
+"ddos attack",
+"DDOS ATTACK",
+"earn money fast",
+"EARN MONEY FAST",
+"make $100 per day",
+"MAKE $100 PER DAY",
+"click to earn",
+"CLICK TO EARN",
+"instant payment",
+"INSTANT PAYMENT",
+"no investment",
+"NO INVESTMENT",
+"bitcoin scam",
+"BITCOIN SCAM",
+"crypto giveaway",
+"CRYPTO GIVEAWAY",
+"free robux",
+"FREE ROBUX",
+"free uc",
+"FREE UC",
+"free fire diamonds",
+"FREE FIRE DIAMONDS",
+"kids kiss",
+"KIDS KISS",
+"child model",
+"CHILD MODEL",
+"child in underwear",
+"CHILD IN UNDERWEAR",
+"baby body",
+"BABY BODY",
+"child touching",
+"CHILD TOUCHING",
+"minor exposed",
+"MINOR EXPOSED",
+"child dance 18+",
+"CHILD DANCE 18+",
+"suicide challenge",
+"SUICIDE CHALLENGE",
+"cut wrist",
+"CUT WRIST",
+"hurt myself",
+"HURT MYSELF",
+"die soon",
+"DIE SOON",
+"jump from building",
+"JUMP FROM BUILDING",
+"painful death",
+"PAINFUL DEATH",
+"self harm",
+"SELF HARM",
+"bastard",
+"BASTARD",
+"slut",
+"SLUT",
+"whore",
+"WHORE",
+"dumbass",
+"DUMBASS",
+"motherfer",
+"MOTHERFER",
+"f*** you",
+"F*** YOU",
+"ahole",
+"AHOLE",
+"bullshit",
+"BULLSHIT",
+"jerk",
+"JERK",
+"pervert",
+"PERVERT",
+"choking challenge",
+"CHOKING CHALLENGE",
+"fire challenge",
+"FIRE CHALLENGE",
+"knife challenge",
+"KNIFE CHALLENGE",
+"ghost summoning",
+"GHOST SUMMONING",
+"dark web",
+"DARK WEB",
+"24 hour challenge",
+"24 HOUR CHALLENGE",
+"dead prank",
+"DEAD PRANK",
+"fake death",
+"FAKE DEATH",
+"100guarantee",
+"100%Guarantee",
+"100%GUARANTEE",
+"১০০%গ্যারেন্টি", 
+"১০০%গেরান্টি", 
+"১০০% গেরেন্টি", 
+"১০০গ্যারেন্টি", 
+"১০০গ্যারেন্টি", 
+"১০০%গ্যারেন্টি",
+"হলিউড", 
+"হলিঊড", 
+"গার্লসেক্স",
+"গার্লসেক্স*",
+"Girlsex",
+"Girl Sex",
+"GirlSex",
+"GIRLSEX",
+"GIRL SEX",
+"girlsex",
+"সেক্সিগার্ল", 
+"Sexy girl", 
+"Sexy Girl",
+"SEXYGIRL",
+"SEXY GIRL",
+"sexygirl",
+"sexy girl",
+"Sexy",
+"SEXY",
+"sexy",
+ "liar",
+ "lIAR",
+"Liar",  
+ "Stupid",
+ "stupid",
+ "STUPID",  
+"uneducated", 
+"Uneducated",
+"UNEDUCATED",
+"Cooking",
+"cooking",
+"COOKING",
+"কুকিং",
+"কুকিংরেসিপি",
+"CookingRecipe",
+"cookingrecipe",
+"COOKINGRECIPE",
+"AI Hack",
+"ai hack",
+"AIHack",
+"aiHack",
+"AIHACK",
+"AI HACK",
+"AIহ্যাক",
+"aihack",
+"এলগোরিদমহ্যাক", 
+"Algorithm hack",
+"AlGORITHM HACK",
+"AlGORITHMHACK",
+"algorithm hack",
+"algorithmhack",
+"YouTube algorithm hack",
+"YouTubealgorithmhack",
+"youTubealgorithmhack",
+"YouTubeAlgorithmHack",
+"YouTube Algorithm Hack",
+"100% guaranteed income",
+"100% Guaranteed Income",
+"100% Guaranteed Earning",
+"Guaranteed Earning",
+"guaranteed earning",
+"guaranteedearning",
+"১০০%গেরেন্টি ইনকাম হবেই" ,
+"১০০%গেরেন্টি ইনকাম",  
+      "keyword phrase"
+      // এখানেই যত খুশি শব্দ যোগ করো
+    ];
+
+    function escapeRegex(s) {
+      return s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    }
+
+    const input = document.getElementById('inputText');
+    const submitBtn = document.getElementById('submitBtn');
+    const clearBtn = document.getElementById('clearBtn');
+    const result = document.getElementById('result');
+    const matchesContainer = document.getElementById('matchesContainer');
+    const wordCountEl = document.getElementById('wordCount');
+
+    function countWords(text) {
+      const arr = text.trim().split(/\s+/).filter(Boolean);
+      return text.trim().length === 0 ? 0 : arr.length;
+    }
+
+    input.addEventListener('input', () => {
+      wordCountEl.textContent = 'Words: ' + countWords(input.value);
+    });
+
+    clearBtn.addEventListener('click', () => {
+      input.value = '';
+      result.textContent = '(Result will appear here)';
+      matchesContainer.innerHTML = '';
+      wordCountEl.textContent = 'Words: 0';
+    });
+
+    submitBtn.addEventListener('click', () => {
+      const text = input.value || '';
+      const wordCount = countWords(text);
+      if (wordCount > 5000) {
+        result.innerHTML = '<span class="warning">আপনার লেখা ৫০০০ শব্দের বেশি — আগে কেটে নিন।</span>';
+        matchesContainer.innerHTML = '';
+        return;
+      }
+
+      if (!text.trim()) {
+        result.textContent = '(No text. No issues)';
+        matchesContainer.innerHTML = '';
+        return;
+      }
+
+      const found = [];
+      for (let kw of KEYWORDS) {
+        if (!kw || !kw.trim()) continue;
+        const pattern = '(?<![\\p{L}\\p{N}_])' + escapeRegex(kw.trim()) + '(?![\\p{L}\\p{N}_])';
+        let re;
+        try {
+          re = new RegExp(pattern, 'giu');
+        } catch (e) {
+          const altPattern = '\\b' + escapeRegex(kw.trim()) + '\\b';
+          re = new RegExp(altPattern, 'gi');
+        }
+        const matches = text.match(re);
+        if (matches) {
+          found.push({ keyword: kw, count: matches.length });
+        }
+      }
+
+      matchesContainer.innerHTML = '';
+      if (found.length === 0) {
+        result.textContent = '(No Issues Found)';
+      } else {
+        result.textContent = `Matched ${found.length} keywords:`;
+        found.forEach(item => {
+          const span = document.createElement('span');
+          span.className = 'match-item';
+          span.textContent = `${item.keyword} × ${item.count}`;
+          matchesContainer.appendChild(span);
+        });
+      }
+    });
+  </script>
+</body>
+</html>
